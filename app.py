@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-import os
 
 # ---------------------------
 # PAGE CONFIG
@@ -53,10 +52,14 @@ def connect_sheet():
         "https://spreadsheets.google.com/feeds",
         "https://www.googleapis.com/auth/drive"
     ]
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    cred_path = os.path.join(BASE_DIR, "credentials.json")
 
-    creds = ServiceAccountCredentials.from_json_keyfile_name(cred_path, scope)
+    # ✅ ONLY CHANGE HERE (use secrets instead of file)
+    creds_dict = st.secrets["gcp_service_account"]
+
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(
+        creds_dict, scope
+    )
+
     client = gspread.authorize(creds)
     return client.open("RAB_Test").sheet1
 
@@ -100,8 +103,8 @@ filtered_df = df[df["buyer"] == buyer].copy()
 filtered_df = filtered_df[
     ["id", "buyer", "sku", "description",
      "current_stock", "suggested_qty",
-     "approved_quantity",  # 👈 moved first
-     "approve"]            # 👈 moved after
+     "approved_quantity",
+     "approve"]
 ]
 
 # ---------------------------
@@ -188,8 +191,8 @@ if st.session_state.confirm:
                     match = approved_rows[approved_rows["id"] == row_id]
 
                     if not match.empty:
-                        all_values[i][7] = str(int(match.iloc[0]["approved_quantity"]))  # Approved Qty
-                        all_values[i][6] = "1"  # Approve
+                        all_values[i][7] = str(int(match.iloc[0]["approved_quantity"]))
+                        all_values[i][6] = "1"
 
                 sheet.update(all_values)
 
